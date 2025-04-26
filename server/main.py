@@ -94,3 +94,12 @@ async def process_mcp_request(request: MCPRequest):
         return await mcp_server.handle_request(request)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+def start():
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # For production
+    # uvicorn server.main:app --reload  
+
+if __name__ == "__main__":
+    start()

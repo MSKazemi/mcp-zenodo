@@ -105,38 +105,10 @@ class ToolInvoker:
             self.compare_tool = compare_records
         return self.compare_tool
     
-    async def invoke(
-        self,
-        prompt: Dict[str, Any],
-        resources: Dict[str, Any],
-        request: MCPRequest
-    ) -> MCPResponse:
-        """Invoke necessary tools to process the request.
-        
-        This function acts as a dispatcher that takes an MCP request and routes it to the appropriate tool.
-        Currently, it only handles search requests by delegating to the search_tool to perform Zenodo searches.
-        
-        The function takes a prompt dictionary and resources dictionary which appear to be unused currently,
-        suggesting this may be extended in the future to handle other types of requests or processing.
-        
-        Args:
-            prompt: The assembled prompt dictionary (currently unused)
-            resources: The prepared resources dictionary (currently unused) 
-            request: The original MCP request containing search parameters like query, filters, pagination etc.
-            
-        Returns:
-            MCPResponse containing the search results from Zenodo
-        """
-        # Use the search tool for search requests
-        search_tool = self._get_search_tool()
-        return await search_tool(
-            query=request.query,
-            filters=request.filters,
-            page=request.page,
-            size=request.size,
-            sort_by=request.sort_by
-        )
+
     
+
+
     async def get_metadata(self, request: MetadataRequest) -> MetadataResponse:
         """Get detailed metadata for a Zenodo record.
         
@@ -305,3 +277,35 @@ class ToolInvoker:
             comparison=result["comparison"],
             total_records=result["total_records"]
         ) 
+    
+    async def invoke(
+        self,
+        prompt: Dict[str, Any],
+        resources: Dict[str, Any],
+        request: MCPRequest
+    ) -> MCPResponse:
+        """Invoke necessary tools to process the request.
+        
+        This function acts as a dispatcher that takes an MCP request and routes it to the appropriate tool.
+        Currently, it only handles search requests by delegating to the search_tool to perform Zenodo searches.
+        
+        The function takes a prompt dictionary and resources dictionary which appear to be unused currently,
+        suggesting this may be extended in the future to handle other types of requests or processing.
+        
+        Args:
+            prompt: The assembled prompt dictionary (currently unused)
+            resources: The prepared resources dictionary (currently unused) 
+            request: The original MCP request containing search parameters like query, filters, pagination etc.
+            
+        Returns:
+            MCPResponse containing the search results from Zenodo
+        """
+        # Use the search tool for search requests
+        search_tool = self._get_search_tool()
+        return await search_tool(
+            query=request.query,
+            filters=request.filters,
+            page=request.page,
+            size=request.size,
+            sort_by=request.sort_by
+        )
