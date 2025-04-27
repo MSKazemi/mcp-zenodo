@@ -1,150 +1,100 @@
-"""
-Main MCP Client implementation for Zenodo.
-"""
-
+import asyncio
+import json
 import os
-from typing import Optional, Dict, Any, List
-from .roots import AuthenticationRoot
-from .sampling import SamplingRoot
-from models.request import MCPRequest
-from .discovery import DiscoveryClient
-import aiohttp
+from typing import Optional, Dict, Any
+from contextlib import AsyncExitStack
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+from dotenv import load_dotenv
+load_dotenv()  # load environment variables from .env
 
-class MCPZenodoClient:
-    """Main client class for MCP Zenodo integration."""
-    
-    def __init__(self, base_url: str = "http://localhost:8000", access_token: Optional[str] = None):
-        """Initialize the MCP Zenodo client.
-        
-        Args:
-            base_url: Base URL of the MCP server
-            access_token: Optional access token for authentication
-        """
-        self.base_url = base_url.rstrip("/")
-        self.access_token = access_token
-        self._session: Optional[aiohttp.ClientSession] = None
-        self.auth_root = AuthenticationRoot(self.access_token)
-        self.sampling_root = SamplingRoot()
-        self.discovery = DiscoveryClient(base_url)
-    
-    async def __aenter__(self):
-        """Create aiohttp session when entering context."""
-        self._session = aiohttp.ClientSession()
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Close aiohttp session when exiting context."""
-        if self._session:
-            try:
-                await self._session.close()
-            except Exception as e:
-                print(f"Error closing session: {e}")
-            finally:
-                self._session = None
-    
-    async def discover_tools(self) -> List[Dict[str, Any]]:
-        """Discover available tools from the MCP server.
-        
-        Returns:
-            List of dictionaries containing tool information
-            
-        Raises:
-            aiohttp.ClientError: If the request fails
-        """
-        return await self.discovery.get_available_tools()
-    
-    async def get_tool_info(self, tool_name: str) -> Optional[Dict[str, Any]]:
-        """Get information about a specific tool.
-        
-        Args:
-            tool_name: Name of the tool to get information about
-            
-        Returns:
-            Dictionary containing tool information if found, None otherwise
-            
-        Raises:
-            aiohttp.ClientError: If the request fails
-        """
-        return await self.discovery.get_tool_info(tool_name)
-    
-    async def call_tool(self, name: str, arguments: Dict[str, Any]) -> Any:
-        """Call a tool by name with the given arguments.
-        
-        Args:
-            name: Name of the tool to call
-            arguments: Arguments to pass to the tool
-            
-        Returns:
-            Result of the tool call
-            
-        Raises:
-            aiohttp.ClientError: If the request fails
-        """
-        if not self._session:
-            self._session = aiohttp.ClientSession()
-        
-        try:
-            async with self._session.post(
-                f"{self.base_url}/mcp/tools/call",
-                json={"name": name, "arguments": arguments}
-            ) as response:
-                response.raise_for_status()
-                data = await response.json()
-                return data.get("result")
-        except aiohttp.ClientError as e:
-            print(f"Error calling tool {name}: {e}")
-            return None
-    
-    async def make_request(
-        self,
-        method: str,
-        endpoint: str,
-        params: Optional[Dict] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Make an authenticated request to the Zenodo API.
-        
-        Args:
-            method: HTTP method (GET, POST, etc.)
-            endpoint: API endpoint
-            params: Optional query parameters
-            **kwargs: Additional arguments for the request
-            
-        Returns:
-            Response data as a dictionary
-        """
-        # Get authentication context
-        auth_context = await self.auth_root.authenticate(MCPRequest(query=""))
-        
-        # Make the request through sampling root
-        return await self.sampling_root.make_request(
-            method=method,
-            endpoint=endpoint,
-            params=params,
-            auth_context=auth_context,
-            **kwargs
-        )
-    
-    async def get_metadata(self, record_id: str) -> Dict[str, Any]:
-        """Get detailed metadata for a Zenodo record.
-        
-        Args:
-            record_id: The ID of the Zenodo record
-            
-        Returns:
-            Dictionary containing the record metadata
-        """
-        return await self.make_request("GET", f"records/{record_id}")
-    
-    async def search_records(self, query: str, params: Optional[Dict] = None) -> Dict[str, Any]:
-        """Basic search operation for Zenodo records.
-        
-        Args:
-            query: Search query string
-            params: Optional additional parameters
-            
-        Returns:
-            Raw search results from Zenodo API
-        """
-        search_params = {"q": query, **(params or {})}
-        return await self.make_request("GET", "records", params=search_params)
+# class MCPClient:
+#     def __init__(self):
+#         # Initialize session and client objects
+#         self.session: Optional[ClientSession] = None
+#         self.exit_stack = AsyncExitStack()
+#     # methods will go here
+#     async def connect_to_server(self, server_script_path: str):
+#         """Connect to an MCP server
+
+#         Args:
+#             server_script_path: Path to the server script (.py or .js)
+#         """
+#         is_python = server_script_path.endswith('.py')
+#         is_js = server_script_path.endswith('.js')
+#         if not (is_python or is_js):
+#             raise ValueError("Server script must be a .py or .js file")
+
+#         command = "python" if is_python else "node"
+#         server_params = StdioServerParameters(
+#             command=command,
+#             args=[server_script_path],
+#             env=None
+#         )
+
+#         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
+#         self.stdio, self.write = stdio_transport
+#         self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+
+#         await self.session.initialize()
+
+#         # List available tools
+#         response = await self.session.list_tools()
+#         tools = response.tools
+#         print("\nConnected to server with tools:", [tool.name for tool in tools])
+
+# async def main():
+#     client = MCPClient()
+#     await client.connect_to_server("/home/mohsen/scratch/ZenodoMCP/mcp-zenodo/server/server.py")
+#     # You can add more client logic here if needed
+
+# if __name__ == "__main__":
+#     asyncio.run(main())
+
+import asyncio
+import os
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+from dotenv import load_dotenv
+load_dotenv()
+
+async def main():
+    server_script_path = "/home/mohsen/scratch/ZenodoMCP/mcp-zenodo/server/server.py"
+    is_python = server_script_path.endswith('.py')
+    is_js = server_script_path.endswith('.js')
+    if not (is_python or is_js):
+        raise ValueError("Server script must be a .py or .js file")
+
+    command = "python" if is_python else "node"
+    server_params = StdioServerParameters(
+        command=command,
+        args=[server_script_path],
+        env=None
+    )
+
+    async with stdio_client(server_params) as (stdio, write):
+        async with ClientSession(stdio, write) as session:
+            await session.initialize()
+            response = await session.list_tools()
+            tools = response.tools
+            print("\nConnected to server with tools:", [tool.name for tool in tools])
+            # Add more client logic here if needed
+            # Example:
+            # result = await session.call_tool("search_records", {"query": "ExaData", "max_results": 1})
+            # print(result)
+            print("--------------------------------")
+            result = await session.call_tool("get_citation", {"record_id": "10533504"})
+            print(result)
+            print("--------------------------------")
+            result = await session.call_tool("get_record", {"record_id": "10533504"})
+            print(result)
+            print("--------------------------------")
+            result = await session.call_tool("get_record_files", {"record_id": "10533504"})
+            print(result)
+
+
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+

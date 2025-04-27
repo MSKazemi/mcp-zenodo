@@ -1,0 +1,21 @@
+[project]
+name = "mcp-zenodo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.11.18",
+    "bcrypt>=4.3.0",
+    "fastapi>=0.115.12",
+    "mcp[cli]>=1.6.0",
+    "numpy>=2.2.5",
+    "passlib>=1.7.4",
+    "pydantic>=2.11.3",
+    "python-dotenv>=1.1.0",
+    "python-jose>=3.4.0",
+    "python-levenshtein>=0.27.1",
+    "python-multipart>=0.0.20",
+    "scikit-learn>=1.6.1",
+    "uvicorn>=0.34.2",
+]

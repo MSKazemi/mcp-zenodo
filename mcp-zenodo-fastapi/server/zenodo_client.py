@@ -4,7 +4,7 @@ Basic Zenodo API client for authentication and communication.
 
 import aiohttp
 from typing import Dict, Any, Optional, List
-from config import config
+from .config import config
 
 class MCPZenodoClient:
     """Basic client for Zenodo API authentication and communication."""
