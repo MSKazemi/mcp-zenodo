@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.parquet
+*.db
+*.sqlite3
+*.log
+*.csv
+*.tsv
+*.zip
+*.tar.gz
+*.egg-info/
+*.venv/
+.env
+.DS_Store
