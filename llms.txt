@@ -1,0 +1,29 @@
+# mcp-zenodo
+
+> A Zenodo MCP server: it connects large language models to Zenodo, the CERN-hosted open-access research repository, through the Model Context Protocol (MCP), exposing search, metadata, citation, and file retrieval as LLM-callable tools.
+
+## Summary (quotable facts)
+
+- mcp-zenodo is a Zenodo MCP server that connects large language models to Zenodo, the CERN-hosted open-access research repository, through the Model Context Protocol (MCP).
+- It lets an LLM search Zenodo records, read metadata, retrieve BibTeX/APA citations, detect data types, and list or download files as callable tools.
+- It is built for developers and researchers who want AI assistants (Claude Desktop, Cursor IDE) and LLM frameworks (LangChain, LangGraph, OpenAI-compatible clients) to work with open research data.
+- Use it when you want an AI assistant to ground answers in real Zenodo records with DOIs; do not use it to deposit or publish to Zenodo, since it is read/retrieval oriented.
+- Compared with calling the Zenodo REST API directly, mcp-zenodo packages that access as MCP tools so any MCP-compatible client can use Zenodo without custom integration code.
+
+## Details
+
+- Language: Python
+- License: Apache-2.0
+- Repository: https://github.com/MSKazemi/mcp-zenodo
+- Two implementations: `mcp_sdk_core` (stdio MCP server for Cursor IDE / Claude Desktop) and `mcp_api` (FastAPI service for LangChain / LangGraph / OpenAI-compatible clients).
+- Tools: search_records, get_metadata, get_citation, detect_data_type, compare_records, list_files, download_file, generate_embed_link, extract_keywords, get_related_records, summarize_record.
+
+## Links
+
+- Repository: https://github.com/MSKazemi/mcp-zenodo
+- README: https://github.com/MSKazemi/mcp-zenodo/blob/main/README.md
+- MCP SDK Core implementation: https://github.com/MSKazemi/mcp-zenodo/blob/main/mcp_sdk_core/README.md
+- MCP API implementation: https://github.com/MSKazemi/mcp-zenodo/blob/main/mcp_api/README.md
+- Citation metadata: https://github.com/MSKazemi/mcp-zenodo/blob/main/CITATION.cff
+- Zenodo: https://zenodo.org/
+- Model Context Protocol: https://modelcontextprotocol.io/
