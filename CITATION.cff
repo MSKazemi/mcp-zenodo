@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using these metadata."
+title: "mcp-zenodo"
+abstract: "A Zenodo MCP server: it connects large language models to Zenodo, the CERN-hosted open-access research repository, through the Model Context Protocol (MCP), exposing search, metadata, citation, and file retrieval as LLM-callable tools."
+type: software
+authors:
+  - family-names: "Seyedkazemi Ardebili"
+    given-names: "Mohsen"
+repository-code: "https://github.com/MSKazemi/mcp-zenodo"
+url: "https://github.com/MSKazemi/mcp-zenodo"
+license: Apache-2.0
+keywords:
+  - mcp
+  - model-context-protocol
+  - zenodo
+  - llm
+  - llm-tools
+  - mcp-server
+  - langchain
+  - langgraph
+  - openai
+  - research-data
