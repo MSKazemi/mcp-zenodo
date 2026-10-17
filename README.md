@@ -213,3 +213,9 @@ This project is licensed under the Apache License 2.0 — see the [LICENSE](LICE
 If you use mcp-zenodo in your work, please cite it. Citation metadata is provided in [`CITATION.cff`](CITATION.cff). Example:
 
 > Seyedkazemi Ardebili, M. *mcp-zenodo: A Zenodo MCP server.* https://github.com/MSKazemi/mcp-zenodo
+
+<!-- legal-notice: start -->
+### Legal notice and responsible use
+
+The materials in this repository are made available without warranties to the extent permitted by applicable law. **Please read the [Disclaimer and Responsible-Use Notice](DISCLAIMER.md)** before relying on or deploying them. This notice does not change any existing software license or limit rights that cannot legally be waived.
+<!-- legal-notice: end -->
