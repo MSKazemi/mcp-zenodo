@@ -14,7 +14,11 @@ _client = None
 
 
 def _escape_bibtex(value: str) -> str:
-    """Escape LaTeX special characters before placing text in a BibTeX field."""
+    """Escape LaTeX special characters before placing text in a BibTeX field.
+
+    BibTeX counts every brace, even after a backslash, so "\\{" would still
+    unbalance a field. Braces are written as commands instead.
+    """
     replacements = {
         "\\": r"\textbackslash{}",
         "&": r"\&",
@@ -22,8 +26,8 @@ def _escape_bibtex(value: str) -> str:
         "$": r"\$",
         "#": r"\#",
         "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
+        "{": r"\textbraceleft{}",
+        "}": r"\textbraceright{}",
         "~": r"\textasciitilde{}",
         "^": r"\textasciicircum{}",
     }

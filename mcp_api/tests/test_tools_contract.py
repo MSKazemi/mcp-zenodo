@@ -62,7 +62,26 @@ class ToolPayloadTests(IsolatedAsyncioTestCase):
             result = await citation_tool.get_citation("1")
 
         self.assertIn(r"author = {Doe, Jane \& Roe}", result.citation)
-        self.assertIn(r"title = {Salt \& water: 100\% \{raw\}\_data \#1}", result.citation)
+        self.assertIn(r"title = {Salt \& water: 100\% \textbraceleft{}raw\textbraceright{}\_data \#1}", result.citation)
+
+    async def test_bibtex_braces_stay_balanced(self):
+        for title in ("Open { only", "Close } only", "} reversed {"):
+
+            class CitationClient:
+                async def get_metadata(self, record_id):
+                    return {"metadata": {"title": title, "creators": []}}
+
+            with self.subTest(title=title), patch.object(
+                citation_tool, "_client", CitationClient()
+            ):
+                citation = (await citation_tool.get_citation("1")).citation
+                depth = 0
+                for char in citation:
+                    depth += {"{": 1, "}": -1}.get(char, 0)
+                    self.assertGreaterEqual(depth, 0, citation)
+                self.assertEqual(depth, 0, citation)
+                self.assertNotIn("\\{", citation)
+                self.assertNotIn("\\}", citation)
 
     async def test_list_files_reports_name_and_url(self):
         with patch.object(files_tool, "_client", FakeClient()):
