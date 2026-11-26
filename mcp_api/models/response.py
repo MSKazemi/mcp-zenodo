@@ -101,7 +101,7 @@ class RelatedRecordsResponse(BaseModel):
 class CompareRecordsResponse(BaseModel):
     """Response model for record comparison results."""
     record_ids: List[str]
-    field_comparisons: Dict[str, Dict[str, Union[str, float]]]
+    field_comparisons: Dict[str, Dict[str, Any]]
     overall_similarity: float
     differences: Dict[str, List[Dict[str, str]]]
 

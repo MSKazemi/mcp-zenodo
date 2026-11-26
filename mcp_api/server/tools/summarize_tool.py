@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional
 from models.request import SummarizeRequest
 from models.response import SummarizeResponse
 from server.zenodo_client import MCPZenodoClient
+from server.text import strip_html
 from .registry import tool
 
 # Initialize the client
@@ -134,7 +135,7 @@ async def summarize_record(
     summary_dict = {
         "record_id": record_id,
         "title": metadata.get("metadata", {}).get("title", ""),
-        "summary_text": metadata.get("metadata", {}).get("description", "")[:max_length],
+        "summary_text": strip_html(metadata.get("metadata", {}).get("description", ""))[:max_length],
         "publication_date": metadata.get("metadata", {}).get("publication_date", ""),
         "resource_type": metadata.get("metadata", {}).get("resource_type", {}),
         "access_right": metadata.get("metadata", {}).get("access_right", ""),
