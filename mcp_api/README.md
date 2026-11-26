@@ -130,6 +130,14 @@ workflow.add_edge("search", "analyze")
    - Access file metadata
    - Download file information
 
+## Downloading Files
+
+`download_file` takes a numeric `record_id` and a `file_name` exactly as `list_files` reports it.
+Files are saved on the machine running the server, under `~/.zenodo_cache/<record_id>/`
+(a `/` in a file name is stored as `%2F`). A cached file is returned without a new download
+unless `force_download` is true. Failures are reported in the response's `error` field.
+The cache is not pruned automatically.
+
 ## API Documentation
 
 The API documentation is available at `http://localhost:8000/docs` when running the server.

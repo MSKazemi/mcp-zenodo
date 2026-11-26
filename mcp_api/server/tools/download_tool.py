@@ -2,21 +2,11 @@
 Download tool implementation for Zenodo API.
 """
 
-import os
-import time
-from typing import Dict, Any, Optional
-from pathlib import Path
-from models.request import DownloadRequest
 from models.response import DownloadResponse
 from server.zenodo_client import MCPZenodoClient
 from .registry import tool
 
-# Initialize the client and cache directory
 _client = None
-_cache_dir = os.path.join(os.path.expanduser("~"), ".zenodo_cache")
-
-# Create cache directory if it doesn't exist
-os.makedirs(_cache_dir, exist_ok=True)
 
 def _get_client() -> MCPZenodoClient:
     """Get or create the MCPZenodoClient instance.
@@ -67,20 +57,5 @@ async def download_file(
     Returns:
         DownloadResponse containing the file path and metadata
     """
-    start_time = time.time()
-    
-    # Create request object
-    request = DownloadRequest(
-        record_id=record_id,
-        file_name=file_name,
-        force_download=force_download
-    )
-    
-    # Get client and download file
     client = _get_client()
-    response = await client.download_file(request)
-    
-    # Add query time to response
-    response.query_time = time.time() - start_time
-    
-    return response 
+    return await client.download_file(record_id, file_name, force_download)
