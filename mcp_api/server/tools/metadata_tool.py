@@ -2,9 +2,7 @@
 Metadata tool implementation for Zenodo API.
 """
 
-from typing import Dict, Any, Optional
 import time
-from models.request import MetadataRequest
 from models.response import MetadataResponse
 from server.zenodo_client import MCPZenodoClient
 from .registry import tool
@@ -64,18 +62,11 @@ async def get_metadata(
     """
     start_time = time.time()
     
-    # Create request object
-    request = MetadataRequest(
-        record_id=record_id,
-        include_files=include_files,
-        include_versions=include_versions
-    )
-    
-    # Get client and retrieve metadata
     client = _get_client()
-    response = await client.get_metadata(request)
-    
-    # Add query time to response
-    response.query_time = time.time() - start_time
-    
-    return response 
+    record = await client.get_metadata(record_id)
+
+    return MetadataResponse(
+        record=record,
+        record_id=record_id,
+        query_time=time.time() - start_time,
+    )

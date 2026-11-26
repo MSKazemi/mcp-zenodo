@@ -2,7 +2,7 @@
 Tool for searching Zenodo records.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict
 from server.zenodo_client import MCPZenodoClient
 from .registry import tool
 
@@ -46,15 +46,8 @@ async def search_records(query: str, max_results: int = 10, sort: str = "mostrec
         Dictionary containing search results
     """
     try:
-        # Prepare search parameters
-        params = {
-            "q": query,
-            "size": max_results,
-            "sort": sort
-        }
-        
-        # Make the search request
-        response = await client._make_request('GET', 'records', params=params)
+        # Search through the canonical client
+        response = await client.search_records(query, max_results, sort)
         
         # Extract and format the results
         hits = response.get('hits', {})
