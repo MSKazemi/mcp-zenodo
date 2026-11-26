@@ -1,22 +1,33 @@
 """Zenodo API client used by the MCP server tools."""
 
+import os
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import quote
 
 import aiohttp
+from yarl import URL
 
 from models.response import DownloadResponse
 
 from .config import config
 
-def _safe_name(value: str) -> str:
-    """Return a single path component safe for cache paths."""
-    name = Path(value).name
-    if name in {"", ".", ".."}:
-        raise ValueError(f"Invalid cache path component: {value!r}")
-    return name
+# Record files can be many gigabytes, so limit stalls rather than total duration
+DOWNLOAD_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=60)
+
+
+def _cache_file_name(file_name: str) -> str:
+    """Return the single path component that caches ``file_name``.
+
+    Zenodo file keys may contain "/" (GitHub release archives are named
+    ``owner/repo-v1.0.zip``), so separators are escaped rather than dropped:
+    distinct keys get distinct cache files and none can leave the record folder.
+    """
+    if file_name in {"", ".", ".."} or "\0" in file_name:
+        raise ValueError(f"Invalid file name: {file_name!r}")
+    return file_name.replace("%", "%25").replace("/", "%2F")
 
 
 def _validate_record_id(record_id: str) -> str:
@@ -129,9 +140,8 @@ class MCPZenodoClient:
         """Stream a record file into the local cache and return its path."""
         start = time.monotonic()
         try:
-            safe_record = _safe_name(record_id)
-            safe_name = _safe_name(file_name)
-            target = self.cache_dir / safe_record / safe_name
+            safe_record = _validate_record_id(record_id)
+            target = self.cache_dir / safe_record / _cache_file_name(file_name)
 
             if target.exists() and not force_download:
                 return DownloadResponse(
@@ -152,14 +162,19 @@ class MCPZenodoClient:
             expected_size = entry.get("size")
 
             target.parent.mkdir(parents=True, exist_ok=True)
-            temp = target.with_name(target.name + ".part")
+            # A unique name keeps concurrent downloads of one file apart
+            handle, temp_name = tempfile.mkstemp(dir=target.parent, suffix=".part")
+            os.close(handle)
+            temp = Path(temp_name)
             size = 0
             try:
                 headers = {}
-                if self.api_token and url.startswith(self.base_url.rstrip("/")):
+                if self.api_token and URL(url).origin() == URL(self.base_url).origin():
                     headers["Authorization"] = f"Bearer {self.api_token}"
                 session = await self._get_session()
-                async with session.get(url, headers=headers) as response:
+                async with session.get(
+                    url, headers=headers, timeout=DOWNLOAD_TIMEOUT
+                ) as response:
                     if response.status >= 400:
                         raise ValueError(
                             f"Zenodo API error: {response.status} - {await response.text()}"
