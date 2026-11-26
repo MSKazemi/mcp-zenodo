@@ -4,6 +4,18 @@ import aiohttp
 from typing import Any, Dict, Optional
 from .config import config
 
+def _validate_record_id(record_id: str) -> str:
+    """Return ``record_id`` as a string, rejecting anything but digits.
+
+    The ID is placed in the request path of an authenticated call, so a value
+    such as ``../deposit/depositions`` must never reach the URL.
+    """
+    value = str(record_id)
+    if not (value.isascii() and value.isdigit()):
+        raise ValueError(f"Invalid Zenodo record ID: {record_id!r}")
+    return value
+
+
 class MCPZenodoClient:
     """Basic client for Zenodo API authentication and communication."""
     
@@ -62,6 +74,7 @@ class MCPZenodoClient:
 
     async def get_metadata(self, record_id: str) -> Dict[str, Any]:
         """Return the raw record payload for ``record_id``."""
+        record_id = _validate_record_id(record_id)
         return await self._make_request("GET", f"records/{record_id}")
 
     async def search_records(

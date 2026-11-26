@@ -60,11 +60,13 @@ async def list_files(record_id: str, include_metadata: bool = True) -> Dict[str,
     files = []
     if "files" in record:
         for file_info in record["files"]:
+            links = file_info.get("links", {})
             file_data = {
-                "filename": file_info.get("filename", ""),
+                # The records API names files "key"; "filename" is the deposit API.
+                "filename": file_info.get("key") or file_info.get("filename", ""),
                 "size": file_info.get("size", 0),
                 "type": file_info.get("type", ""),
-                "download_url": file_info.get("links", {}).get("download", "")
+                "download_url": links.get("download") or links.get("self", "")
             }
             
             # Add additional metadata if requested

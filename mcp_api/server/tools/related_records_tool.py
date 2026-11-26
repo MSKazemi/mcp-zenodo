@@ -8,6 +8,9 @@ from models.request import RelatedRecordsRequest
 from models.response import RelatedRecordsResponse
 from .registry import tool
 
+# Upper bound on searches issued for a single lookup
+MAX_SEARCH_TERMS = 10
+
 # Initialize the client
 _client = None
 
@@ -69,20 +72,23 @@ async def get_related_records(
     # Extract search terms from the record
     search_terms = _extract_search_terms(record)
     
-    # Search for related records
-    related_records = []
+    # Search for related records, keyed by ID so each appears once
+    matches: Dict[str, Dict[str, Any]] = {}
     for term in search_terms:
-        results = await client.search_records(term, max_results=max_results)
-        for result in results:
-            if result["id"] != record_id:  # Exclude the original record
-                similarity = _calculate_similarity(record, result)
-                if similarity >= similarity_threshold:
-                    related_records.append({
-                        "record_id": result["id"],
-                        "title": result.get("metadata", {}).get("title", ""),
-                        "similarity": similarity
-                    })
-    
+        response = await client.search_records(term, max_results=max_results)
+        for result in response.get("hits", {}).get("hits", []):
+            result_id = str(result["id"])
+            if result_id == str(record_id) or result_id in matches:
+                continue  # Skip the original record and repeats
+            similarity = _calculate_similarity(record, result)
+            if similarity >= similarity_threshold:
+                matches[result_id] = {
+                    "record_id": result_id,
+                    "title": result.get("metadata", {}).get("title", ""),
+                    "similarity": similarity
+                }
+    related_records = list(matches.values())
+
     # Sort by similarity and limit results
     related_records.sort(key=lambda x: x["similarity"], reverse=True)
     related_records = related_records[:max_results]
@@ -119,7 +125,8 @@ def _extract_search_terms(record: Dict[str, Any]) -> List[str]:
             if "name" in creator:
                 terms.append(creator["name"])
     
-    return terms
+    # One request per term: cap them so a record with many authors stays usable
+    return terms[:MAX_SEARCH_TERMS]
 
 def _calculate_similarity(record1: Dict[str, Any], record2: Dict[str, Any]) -> float:
     """Calculate similarity between two records.
