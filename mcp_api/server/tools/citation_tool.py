@@ -35,7 +35,7 @@ def _get_client() -> MCPZenodoClient:
             },
             "format": {
                 "type": "string",
-                "description": "The citation format (bibtex, apa, etc.)",
+                "description": "The citation format: bibtex or apa",
                 "default": "bibtex"
             }
         },

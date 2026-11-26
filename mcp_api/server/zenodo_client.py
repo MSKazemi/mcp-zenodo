@@ -18,6 +18,21 @@ from .config import config
 # Record files can be many gigabytes, so limit stalls rather than total duration
 DOWNLOAD_TIMEOUT = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=60)
 
+# Largest search page Zenodo serves to requests without a token
+ANONYMOUS_PAGE_SIZE = 25
+
+
+class RateLimitError(ValueError):
+    """Zenodo refused a request because too many were sent."""
+
+    def __init__(self, retry_after: Optional[str] = None):
+        self.retry_after = retry_after
+        wait = f"in {retry_after} seconds" if retry_after else "in a minute"
+        super().__init__(
+            f"Zenodo rate limit reached. Try again {wait}; "
+            "an API token allows more requests."
+        )
+
 
 def _cache_file_name(file_name: str) -> str:
     """Return the single path component that caches ``file_name``.
@@ -104,7 +119,10 @@ class MCPZenodoClient:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         
         async with session.request(method, url, headers=headers, **kwargs) as response:
-            if response.status == 401:
+            if response.status == 429:
+                retry_after = response.headers.get("Retry-After", "")
+                raise RateLimitError(retry_after if retry_after.isdigit() else None)
+            elif response.status == 401:
                 raise ValueError("Authentication failed. Please check your Zenodo API token.")
             elif response.status == 403:
                 raise ValueError("Permission denied. Your token may not have sufficient permissions.")
@@ -128,8 +146,11 @@ class MCPZenodoClient:
     ) -> Dict[str, Any]:
         """Return the raw search payload for ``query``.
 
-        ``filters`` are extra query parameters of the records API.
+        ``filters`` are extra query parameters of the records API. Without a token
+        the page size is capped at what Zenodo allows.
         """
+        if not self.api_token:
+            max_results = min(max_results, ANONYMOUS_PAGE_SIZE)
         params = {
             key: str(value).lower() if isinstance(value, bool) else value
             for key, value in (filters or {}).items()

@@ -2,6 +2,7 @@
 Tool registry and decorator for MCP Zenodo server.
 """
 
+import inspect
 from typing import Dict, Any, Callable, Optional, List
 from functools import wraps
 
@@ -76,6 +77,10 @@ async def dispatch_tool_call(name: str, arguments: Dict[str, Any]) -> Any:
         Result of the tool execution
     """
     tool = get_tool(name)
-    if tool:
-        return await tool["function"](**arguments)
-    raise ValueError(f"Tool {name} not found")
+    if not tool:
+        raise ValueError(f"Tool {name} not found")
+    try:
+        inspect.signature(tool["function"]).bind(**arguments)
+    except TypeError as error:
+        raise ValueError(f"Invalid arguments for {name}: {error}") from error
+    return await tool["function"](**arguments)
