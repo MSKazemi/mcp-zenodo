@@ -74,9 +74,12 @@ async def detect_data_type(record_id: str) -> Dict[str, Any]:
         result["data_type"] = "article"
         result["confidence"] = 0.8
     
+    file_extensions = []
+
     # Check file extensions as a fallback
     if result["data_type"] == "unknown" and "files" in record:
-        file_extensions = [f.get("filename", "").split(".")[-1].lower() for f in record["files"] if "." in f.get("filename", "")]
+        file_names = [f.get("key") or f.get("filename", "") for f in record["files"]]
+        file_extensions = [name.split(".")[-1].lower() for name in file_names if "." in name]
         
         # Software indicators
         if any(ext in ["py", "js", "java", "cpp", "c", "h", "r", "matlab"] for ext in file_extensions):
@@ -97,7 +100,7 @@ async def detect_data_type(record_id: str) -> Dict[str, Any]:
         "description": metadata.get("description", ""),
         "keywords": metadata.get("keywords", []),
         "file_count": len(record.get("files", [])),
-        "file_types": list(set(file_extensions)) if "files" in record else []
+        "file_types": sorted(set(file_extensions))
     }
     
     return result 

@@ -1,10 +1,20 @@
-"""
-Basic Zenodo API client for authentication and communication.
-"""
+"""Zenodo API client used by the MCP server tools."""
 
 import aiohttp
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, Optional
 from .config import config
+
+def _validate_record_id(record_id: str) -> str:
+    """Return ``record_id`` as a string, rejecting anything but digits.
+
+    The ID is placed in the request path of an authenticated call, so a value
+    such as ``../deposit/depositions`` must never reach the URL.
+    """
+    value = str(record_id)
+    if not (value.isascii() and value.isdigit()):
+        raise ValueError(f"Invalid Zenodo record ID: {record_id!r}")
+    return value
+
 
 class MCPZenodoClient:
     """Basic client for Zenodo API authentication and communication."""
@@ -61,3 +71,21 @@ class MCPZenodoClient:
                 raise ValueError(f"Zenodo API error: {response.status} - {error_text}")
             
             return await response.json()
+
+    async def get_metadata(self, record_id: str) -> Dict[str, Any]:
+        """Return the raw record payload for ``record_id``."""
+        record_id = _validate_record_id(record_id)
+        return await self._make_request("GET", f"records/{record_id}")
+
+    async def search_records(
+        self,
+        query: str,
+        max_results: int = 10,
+        sort: str = "mostrecent",
+    ) -> Dict[str, Any]:
+        """Return the raw search payload for ``query``."""
+        return await self._make_request(
+            "GET",
+            "records",
+            params={"q": query, "size": max_results, "sort": sort},
+        )
