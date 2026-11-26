@@ -11,6 +11,14 @@ from models.response import DownloadResponse
 
 from .config import config
 
+def _safe_name(value: str) -> str:
+    """Return a single path component safe for cache paths."""
+    name = Path(value).name
+    if name in {"", ".", ".."}:
+        raise ValueError(f"Invalid cache path component: {value!r}")
+    return name
+
+
 def _find_file(record: Dict[str, Any], file_name: str) -> Dict[str, Any]:
     """Return the file entry matching ``file_name`` in a Zenodo record."""
     for entry in record.get("files", []):
@@ -107,11 +115,11 @@ class MCPZenodoClient:
     ) -> DownloadResponse:
         """Stream a record file into the local cache and return its path."""
         start = time.monotonic()
-        safe_record = Path(record_id).name
-        safe_name = Path(file_name).name
-        target = self.cache_dir / safe_record / safe_name
-
         try:
+            safe_record = _safe_name(record_id)
+            safe_name = _safe_name(file_name)
+            target = self.cache_dir / safe_record / safe_name
+
             if target.exists() and not force_download:
                 return DownloadResponse(
                     record_id=record_id,
