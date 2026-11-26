@@ -24,6 +24,8 @@ make setup
 make test
 ```
 
+`make lint` runs the same [Ruff](https://docs.astral.sh/ruff/) check as CI.
+
 The tests use a local stand-in for Zenodo, so they need no token and no network access.
 Without `make`, run `uv sync`, then `uv run python -m unittest discover -s tests` from
 `mcp_api/`.
