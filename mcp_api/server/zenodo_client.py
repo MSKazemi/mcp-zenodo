@@ -19,6 +19,18 @@ def _safe_name(value: str) -> str:
     return name
 
 
+def _validate_record_id(record_id: str) -> str:
+    """Return ``record_id`` as a string, rejecting anything but digits.
+
+    The ID is placed in the request path of an authenticated call, so a value
+    such as ``../deposit/depositions`` must never reach the URL.
+    """
+    value = str(record_id)
+    if not (value.isascii() and value.isdigit()):
+        raise ValueError(f"Invalid Zenodo record ID: {record_id!r}")
+    return value
+
+
 def _find_file(record: Dict[str, Any], file_name: str) -> Dict[str, Any]:
     """Return the file entry matching ``file_name`` in a Zenodo record."""
     for entry in record.get("files", []):
@@ -92,6 +104,7 @@ class MCPZenodoClient:
 
     async def get_metadata(self, record_id: str) -> Dict[str, Any]:
         """Return the raw record payload for ``record_id``."""
+        record_id = _validate_record_id(record_id)
         return await self._make_request("GET", f"records/{record_id}")
 
     async def search_records(
