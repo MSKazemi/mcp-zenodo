@@ -200,6 +200,8 @@ Not at this time — install it by cloning the repository as shown in the quicks
 
 Contributions to both implementations are welcome. Please see the implementation READMEs ([mcp_sdk_core](mcp_sdk_core/README.md), [mcp_api](mcp_api/README.md)) for details.
 
+Thank you to everyone listed in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
 ---
 
 ## License
