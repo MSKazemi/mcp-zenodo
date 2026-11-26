@@ -3,7 +3,7 @@
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import patch
 
-from server.tools import data_type_tool, files_tool, related_records_tool
+from server.tools import citation_tool, data_type_tool, files_tool, related_records_tool
 from server.zenodo_client import MCPZenodoClient
 
 CONTENT_URL = "https://zenodo.org/api/records/1/files/table.csv/content"
@@ -46,6 +46,24 @@ class RecordIdTests(IsolatedAsyncioTestCase):
 
 
 class ToolPayloadTests(IsolatedAsyncioTestCase):
+    async def test_bibtex_escapes_special_characters_in_title_and_authors(self):
+        class CitationClient:
+            async def get_metadata(self, record_id):
+                return {
+                    "metadata": {
+                        "title": "Salt & water: 100% {raw}_data #1",
+                        "creators": [{"name": "Doe, Jane & Roe"}],
+                        "publication_date": "2025-01-02",
+                        "doi": "10.5281/zenodo.1",
+                    }
+                }
+
+        with patch.object(citation_tool, "_client", CitationClient()):
+            result = await citation_tool.get_citation("1")
+
+        self.assertIn(r"author = {Doe, Jane \& Roe}", result.citation)
+        self.assertIn(r"title = {Salt \& water: 100\% \{raw\}\_data \#1}", result.citation)
+
     async def test_list_files_reports_name_and_url(self):
         with patch.object(files_tool, "_client", FakeClient()):
             result = await files_tool.list_files("1")

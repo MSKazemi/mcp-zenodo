@@ -12,6 +12,24 @@ from .registry import tool
 # Initialize the client
 _client = None
 
+
+def _escape_bibtex(value: str) -> str:
+    """Escape LaTeX special characters before placing text in a BibTeX field."""
+    replacements = {
+        "\\": r"\textbackslash{}",
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
+    }
+    return "".join(replacements.get(char, char) for char in value)
+
+
 def _get_client() -> MCPZenodoClient:
     """Get or create the MCPZenodoClient instance.
     
@@ -66,8 +84,9 @@ async def get_citation(record_id: str, format: str = "bibtex") -> CitationRespon
     
     if format.lower() == "bibtex":
         # Generate BibTeX citation
-        authors = " and ".join(c.get("name", "") for c in creators)
+        authors = " and ".join(_escape_bibtex(c.get("name", "")) for c in creators)
         year = pub_date.split("-")[0] if pub_date else ""
+        title = _escape_bibtex(title)
         
         citation = f"""@misc{{{record_id},
   author = {{{authors}}},
@@ -93,4 +112,4 @@ async def get_citation(record_id: str, format: str = "bibtex") -> CitationRespon
         citation=citation,
         format=format,
         query_time=time.time() - start_time
-    ) 
+    )
