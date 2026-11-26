@@ -14,6 +14,7 @@
 
 ### Added
 - Real file downloads with size and checksum verification. Thanks @cheeseonamonkey (#7).
+- The `/docs` page can send the API key. Thanks @harshacreate (#26).
 - `extract_keywords` and `generate_embed_link`.
 - A Dockerfile, a test suite and CI.
 - A contributor guide, issue and pull request templates, a security policy and a Makefile.
@@ -21,6 +22,8 @@
 
 ### Fixed
 - A single Zenodo client replaces the broken duplicate. Thanks @cheeseonamonkey (#6).
+- BibTeX citations stay valid when titles or names contain special characters. Thanks
+  @harshacreate (#25).
 - `compare_records`, `/mcp/process`, `list_files` and related-record lookups.
 - Record IDs are validated before they are used in a request.
 - Clear errors for invalid tool arguments and Zenodo's rate limit; page size is capped
