@@ -1,0 +1,20 @@
+name: Idea or improvement
+description: Suggest a tool, a change or better documentation
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would help?
+  - type: checkboxes
+    id: offer
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd like to work on this

@@ -69,16 +69,20 @@ print(response.json()["result"])
 
 `POST /mcp/process` runs a search and returns typed records. It takes `query`, `max_results`
 and optional `filters` (`all_versions`, `bounds`, `communities`, `page`, `status`,
-`subtype`, `type`). Without a token, Zenodo serves at most 25 results per page.
+`subtype`, `type`). Without a token, pages are capped at 25 results.
+
+Errors: `400` for invalid input, `401` or `403` when access is refused, and `429` (with
+`Retry-After` when Zenodo sends it) at Zenodo's rate limit, which is 30 requests a minute
+without a token.
 
 ## Available MCP Tools
 
 | Tool | What it returns |
 |------|-----------------|
-| `search_records` | Records matching a query |
+| `search_records` | Short summaries of matching records (`full: true` for Zenodo's complete records) |
 | `get_metadata` | A record's metadata |
 | `get_citation` | A BibTeX or APA citation |
-| `detect_data_type` | A best-effort guess: dataset, software or article |
+| `detect_data_type` | The record's resource type; a guess only when Zenodo states none |
 | `summarize_record` | A plain-text summary built from the metadata |
 | `extract_keywords` | Frequent terms from the title, description and keywords |
 | `list_files` | A record's files with sizes, checksums and links |
@@ -123,11 +127,7 @@ python -m unittest discover -s tests   # from mcp_api/, with the project depende
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for setup, code layout and how to add a tool.
 
 ## License
 
