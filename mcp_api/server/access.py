@@ -15,11 +15,13 @@ import secrets
 from typing import Optional
 from urllib.parse import urlsplit
 
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .config import config
 
 LOCAL_HOST_NAMES = {"localhost", "127.0.0.1", "::1"}
+bearer_security = HTTPBearer(auto_error=False)
 
 
 def _is_loopback(address: Optional[str]) -> bool:
@@ -40,7 +42,10 @@ def _origin_allowed(origin: str, host_header: str) -> bool:
     return "*" in config.cors_origins and bool(config.api_key)
 
 
-async def require_access(request: Request) -> None:
+async def require_access(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_security),
+) -> None:
     """Reject requests that are not entitled to use this server."""
     host_header = request.headers.get("host", "")
 
@@ -50,9 +55,8 @@ async def require_access(request: Request) -> None:
         raise HTTPException(status_code=403, detail="Origin not allowed")
 
     if config.api_key:
-        scheme, _, supplied = request.headers.get("authorization", "").partition(" ")
-        if scheme.lower() != "bearer" or not secrets.compare_digest(
-            supplied.encode(), config.api_key.encode()
+        if credentials is None or not secrets.compare_digest(
+            credentials.credentials.encode(), config.api_key.encode()
         ):
             raise HTTPException(
                 status_code=401,

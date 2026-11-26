@@ -42,6 +42,8 @@ other machines unless you give it a key:
   required for access from another machine, a container's published port or a reverse proxy.
   The service speaks plain HTTP, so put TLS in front of it on any untrusted network.
 
+To try a keyed server from the `/docs` page, click **Authorize** and paste the key.
+
 Web pages on other origins are refused unless the origin is listed in `CORS_ORIGINS`.
 Do not run a keyless server behind a proxy that rewrites the `Host` header to `localhost`:
 its requests would look local.
