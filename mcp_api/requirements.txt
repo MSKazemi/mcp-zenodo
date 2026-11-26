@@ -1,13 +1,6 @@
-fastapi
-uvicorn
-python-dotenv
 aiohttp
+fastapi
 pydantic
-python-multipart
-python-jose
-passlib
-bcrypt
-python-Levenshtein
-numpy
-scikit-learn
+python-dotenv
+uvicorn
 yarl
