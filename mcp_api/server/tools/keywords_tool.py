@@ -4,8 +4,7 @@ Tool for extracting keywords from Zenodo records.
 
 from typing import Dict, Any, List, Optional
 from server.zenodo_client import MCPZenodoClient
-from models.request import KeywordsRequest
-from models.response import KeywordsResponse
+from server.text import strip_html
 from .registry import tool
 
 # Initialize the client
@@ -75,7 +74,7 @@ async def extract_keywords(
     
     # Add description/abstract
     if "description" in record.get("metadata", {}):
-        text += record["metadata"]["description"] + " "
+        text += strip_html(record["metadata"]["description"]) + " "
     
     # Add keywords if available
     if "keywords" in record.get("metadata", {}):

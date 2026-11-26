@@ -2,12 +2,14 @@
 FastAPI application entry point for MCP Zenodo integration.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from server.tools.registry import get_openai_tool_specs, dispatch_tool_call
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
+from .access import require_access
+from .config import config
 from .server import MCPServer
 from models.request import MCPRequest
 from models.response import MCPResponse
@@ -28,17 +30,18 @@ mcp_server = MCPServer()
 app = FastAPI(
     title="MCP Zenodo Integration",
     description="Model Context Protocol integration with Zenodo research data repository",
-    version="0.1.0"
+    version="0.1.0",
+    dependencies=[Depends(require_access)],
 )
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Browsers may call the service only from origins the operator lists
+if config.cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=config.cors_origins,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Authorization", "Content-Type"],
+    )
 
 @app.get("/")
 async def root():
@@ -92,14 +95,14 @@ async def process_mcp_request(request: MCPRequest):
     """
     try:
         return await mcp_server.handle_request(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 def start():
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-    # For production
-    # uvicorn server.main:app --reload  
+    uvicorn.run(app, host=config.host, port=config.port)
 
 if __name__ == "__main__":
     start()

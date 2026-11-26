@@ -65,6 +65,13 @@ async def get_metadata(
     client = _get_client()
     record = await client.get_metadata(record_id)
 
+    if not include_files:
+        record = {key: value for key, value in record.items() if key != "files"}
+    if not include_versions and "metadata" in record:
+        record = {**record, "metadata": {
+            key: value for key, value in record["metadata"].items() if key != "relations"
+        }}
+
     return MetadataResponse(
         record=record,
         record_id=record_id,

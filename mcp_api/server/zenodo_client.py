@@ -1,5 +1,6 @@
 """Zenodo API client used by the MCP server tools."""
 
+import hashlib
 import os
 import tempfile
 import time
@@ -123,13 +124,18 @@ class MCPZenodoClient:
         query: str,
         max_results: int = 10,
         sort: str = "mostrecent",
+        filters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Return the raw search payload for ``query``."""
-        return await self._make_request(
-            "GET",
-            "records",
-            params={"q": query, "size": max_results, "sort": sort},
-        )
+        """Return the raw search payload for ``query``.
+
+        ``filters`` are extra query parameters of the records API.
+        """
+        params = {
+            key: str(value).lower() if isinstance(value, bool) else value
+            for key, value in (filters or {}).items()
+        }
+        params.update({"q": query, "size": max_results, "sort": sort})
+        return await self._make_request("GET", "records", params=params)
 
     async def download_file(
         self,
@@ -160,6 +166,8 @@ class MCPZenodoClient:
                 f"/files/{quote(file_name, safe='')}/content"
             )
             expected_size = entry.get("size")
+            algorithm, _, expected_md5 = str(entry.get("checksum") or "").partition(":")
+            digest = hashlib.md5(usedforsecurity=False)
 
             target.parent.mkdir(parents=True, exist_ok=True)
             # A unique name keeps concurrent downloads of one file apart
@@ -182,12 +190,15 @@ class MCPZenodoClient:
                     with temp.open("wb") as stream:
                         async for chunk in response.content.iter_chunked(64 * 1024):
                             stream.write(chunk)
+                            digest.update(chunk)
 
                 size = temp.stat().st_size
                 if expected_size and size != expected_size:
                     raise ValueError(
                         f"Downloaded {size} bytes; expected {expected_size} for {file_name}"
                     )
+                if algorithm == "md5" and digest.hexdigest() != expected_md5:
+                    raise ValueError(f"Checksum mismatch for {file_name}")
                 temp.replace(target)
             except BaseException:
                 temp.unlink(missing_ok=True)

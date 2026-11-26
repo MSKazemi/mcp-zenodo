@@ -19,4 +19,4 @@ fi
 mkdir -p logs
 
 echo "Setup complete! Please update your .env file with your Zenodo API token."
-echo "To start the server, run: source venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8000" 
+echo "To start the server, run: source venv/bin/activate && python -m server.main" 

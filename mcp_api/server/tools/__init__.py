@@ -12,6 +12,8 @@ from .citation_tool import get_citation
 from .files_tool import list_files
 from .related_records_tool import get_related_records
 from .compare_tool import compare_records
+from .keywords_tool import extract_keywords
+from .embed_tool import generate_embed_link
 
 __all__ = [
     "tool",
@@ -24,18 +26,7 @@ __all__ = [
     "get_citation",
     "list_files",
     "get_related_records",
-    "compare_records"
+    "compare_records",
+    "extract_keywords",
+    "generate_embed_link"
 ]
-
-# Tool registry
-TOOL_REGISTRY = {
-    "search": search_records,
-    "citation": get_citation,
-    "metadata": get_metadata,
-    "download": download_file,
-    "summarize": summarize_record,
-    "data_type": detect_data_type,
-    "list_files": list_files,
-    "related_records": get_related_records,
-    "compare_records": compare_records
-} 

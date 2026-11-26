@@ -2,6 +2,7 @@
 Tool for finding related Zenodo records.
 """
 
+import re
 from typing import Dict, Any, List, Optional
 from server.zenodo_client import MCPZenodoClient
 from models.request import RelatedRecordsRequest
@@ -10,6 +11,10 @@ from .registry import tool
 
 # Upper bound on searches issued for a single lookup
 MAX_SEARCH_TERMS = 10
+# Largest page Zenodo serves to requests without a token
+MAX_PAGE_SIZE = 25
+# Characters and words that Zenodo's search reads as query syntax
+QUERY_SYNTAX = re.compile(r'[-+=&|><!(){}\[\]^"~*?:\\/]|\b(?:AND|OR|NOT)\b')
 
 # Initialize the client
 _client = None
@@ -75,7 +80,10 @@ async def get_related_records(
     # Search for related records, keyed by ID so each appears once
     matches: Dict[str, Dict[str, Any]] = {}
     for term in search_terms:
-        response = await client.search_records(term, max_results=max_results)
+        # One extra, because the source record usually matches itself
+        response = await client.search_records(
+            term, max_results=min(max_results + 1, MAX_PAGE_SIZE)
+        )
         for result in response.get("hits", {}).get("hits", []):
             result_id = str(result["id"])
             if result_id == str(record_id) or result_id in matches:
@@ -125,8 +133,10 @@ def _extract_search_terms(record: Dict[str, Any]) -> List[str]:
             if "name" in creator:
                 terms.append(creator["name"])
     
+    # Titles and names are plain text; raw punctuation can make Zenodo answer 500
+    cleaned = [" ".join(QUERY_SYNTAX.sub(" ", term).split()) for term in terms]
     # One request per term: cap them so a record with many authors stays usable
-    return terms[:MAX_SEARCH_TERMS]
+    return list(dict.fromkeys(term for term in cleaned if term))[:MAX_SEARCH_TERMS]
 
 def _calculate_similarity(record1: Dict[str, Any], record2: Dict[str, Any]) -> float:
     """Calculate similarity between two records.
