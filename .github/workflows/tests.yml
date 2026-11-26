@@ -17,3 +17,18 @@ jobs:
       - run: uv sync --locked
       - run: uv run python -m unittest discover -s tests
         working-directory: mcp_api
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mcp-zenodo .
+      - name: Check that the container serves only callers with the key
+        run: |
+          docker run -d --name app -p 127.0.0.1:8000:8000 -e MCP_API_KEY=ci-key mcp-zenodo
+          curl -fsS --retry 20 --retry-delay 1 --retry-all-errors \
+            -H "Authorization: Bearer ci-key" http://127.0.0.1:8000/
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/)" = 401
+          test "$(docker exec app id -u)" != 0
+      - if: failure()
+        run: docker logs app
