@@ -62,6 +62,14 @@ class AccessTests(IsolatedAsyncioTestCase):
         await self.assert_refused(401, headers={"Authorization": "Bearer wrong"})
         await self.assert_refused(401, headers={"Authorization": "s3cret"})
 
+    async def test_openapi_documents_optional_bearer_authentication(self):
+        schema = main.app.openapi()
+        self.assertIn("HTTPBearer", schema["components"]["securitySchemes"])
+        self.assertIn(
+            {"HTTPBearer": []},
+            schema["paths"]["/mcp/tools/call"]["post"]["security"],
+        )
+
     async def test_key_admits_other_machines(self):
         config.api_key = "s3cret"
         status = await self.call(

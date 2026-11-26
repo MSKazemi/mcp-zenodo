@@ -22,7 +22,10 @@ def _get_client() -> MCPZenodoClient:
 
 @tool(
     name="detect_data_type",
-    description="Determines if a Zenodo record is a dataset, software, or article",
+    description=(
+        "Reports whether a Zenodo record is a dataset, software, article or another "
+        "resource type"
+    ),
     parameters={
         "type": "object",
         "properties": {
@@ -59,8 +62,14 @@ async def detect_data_type(record_id: str) -> Dict[str, Any]:
     # Check for type indicators in metadata
     metadata = record.get("metadata", {})
     
+    # Zenodo states the type; guess only when it is missing or "other"
+    resource_type = metadata.get("resource_type") or {}
+    stated = resource_type.get("type")
+    if stated and stated != "other":
+        result["data_type"] = "article" if stated == "publication" else stated
+        result["confidence"] = 1.0
     # Check for software indicators
-    if "keywords" in metadata and any(kw.lower() in ["software", "code", "program"] for kw in metadata["keywords"]):
+    elif "keywords" in metadata and any(kw.lower() in ["software", "code", "program"] for kw in metadata["keywords"]):
         result["data_type"] = "software"
         result["confidence"] = 0.8
     # Check for dataset indicators
@@ -72,13 +81,11 @@ async def detect_data_type(record_id: str) -> Dict[str, Any]:
         result["data_type"] = "article"
         result["confidence"] = 0.8
     
-    file_extensions = []
+    file_names = [f.get("key") or f.get("filename", "") for f in record.get("files", [])]
+    file_extensions = [name.split(".")[-1].lower() for name in file_names if "." in name]
 
     # Check file extensions as a fallback
-    if result["data_type"] == "unknown" and "files" in record:
-        file_names = [f.get("key") or f.get("filename", "") for f in record["files"]]
-        file_extensions = [name.split(".")[-1].lower() for name in file_names if "." in name]
-        
+    if result["data_type"] == "unknown":
         # Software indicators
         if any(ext in ["py", "js", "java", "cpp", "c", "h", "r", "matlab"] for ext in file_extensions):
             result["data_type"] = "software"
@@ -98,7 +105,8 @@ async def detect_data_type(record_id: str) -> Dict[str, Any]:
         "description": metadata.get("description", ""),
         "keywords": metadata.get("keywords", []),
         "file_count": len(record.get("files", [])),
-        "file_types": sorted(set(file_extensions))
+        "file_types": sorted(set(file_extensions)),
+        "resource_type": resource_type
     }
     
     return result 

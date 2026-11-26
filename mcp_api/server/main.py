@@ -12,6 +12,7 @@ from .config import config
 from .server import MCPServer
 from models.request import MCPRequest
 from models.response import MCPResponse
+from server.zenodo_client import RateLimitError
 
 class ToolCallRequest(BaseModel):
     """Request model for tool calls."""
@@ -41,6 +42,11 @@ if config.cors_origins:
         allow_methods=["GET", "POST"],
         allow_headers=["Authorization", "Content-Type"],
     )
+
+def _rate_limited(error: RateLimitError) -> HTTPException:
+    """Pass Zenodo's rate limit on to the caller."""
+    headers = {"Retry-After": error.retry_after} if error.retry_after else None
+    return HTTPException(status_code=429, detail=str(error), headers=headers)
 
 @app.get("/")
 async def root():
@@ -76,6 +82,8 @@ async def call_tool(request: ToolCallRequest):
         execution_time = time.time() - start_time
         return ToolCallResponse(result=result, execution_time=execution_time)
     
+    except RateLimitError as e:
+        raise _rate_limited(e)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -94,6 +102,8 @@ async def process_mcp_request(request: MCPRequest):
     """
     try:
         return await mcp_server.handle_request(request)
+    except RateLimitError as e:
+        raise _rate_limited(e)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
