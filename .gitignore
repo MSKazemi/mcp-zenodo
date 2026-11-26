@@ -44,3 +44,11 @@ Thumbs.db
 .venv
 .env
 .vscode
+
+# Claude Code materials (private, keep local)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.claude.json
+.claudeignore
+.mcp.json
