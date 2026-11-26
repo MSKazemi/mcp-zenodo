@@ -1,0 +1,5 @@
+aiohttp
+mcp[cli]>=1.6.0,<2
+pydantic
+python-dotenv
+yarl

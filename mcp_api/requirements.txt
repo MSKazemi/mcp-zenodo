@@ -10,4 +10,4 @@ bcrypt
 python-Levenshtein
 numpy
 scikit-learn
-
+yarl
