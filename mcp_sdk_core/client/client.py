@@ -1,8 +1,5 @@
 import asyncio
-import json
 import os
-from typing import Optional, Dict, Any
-from contextlib import AsyncExitStack
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from dotenv import load_dotenv

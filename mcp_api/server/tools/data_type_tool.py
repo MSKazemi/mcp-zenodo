@@ -2,10 +2,8 @@
 Tool for detecting the data type of a Zenodo record.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from server.zenodo_client import MCPZenodoClient
-from models.request import DataTypeRequest
-from models.response import DataTypeResponse
 from .registry import tool
 
 # Initialize the client

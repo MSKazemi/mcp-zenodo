@@ -3,8 +3,7 @@ Summarize tool implementation for Zenodo API.
 """
 
 import time
-from typing import Dict, Any, Optional
-from models.request import SummarizeRequest
+from typing import Dict, Any
 from models.response import SummarizeResponse
 from server.zenodo_client import MCPZenodoClient
 from server.text import strip_html

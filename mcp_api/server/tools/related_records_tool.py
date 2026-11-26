@@ -3,10 +3,8 @@ Tool for finding related Zenodo records.
 """
 
 import re
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from server.zenodo_client import MCPZenodoClient
-from models.request import RelatedRecordsRequest
-from models.response import RelatedRecordsResponse
 from .registry import tool
 
 # Upper bound on searches issued for a single lookup

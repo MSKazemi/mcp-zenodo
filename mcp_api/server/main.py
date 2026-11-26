@@ -4,10 +4,9 @@ FastAPI application entry point for MCP Zenodo integration.
 
 from fastapi import Depends, FastAPI, HTTPException
 from server.tools.registry import get_openai_tool_specs, dispatch_tool_call
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from .access import require_access
 from .config import config
 from .server import MCPServer

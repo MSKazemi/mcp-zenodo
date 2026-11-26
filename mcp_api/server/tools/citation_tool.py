@@ -2,10 +2,8 @@
 Tool for retrieving citations for Zenodo records.
 """
 
-from typing import Dict, Any, Optional
 import time
 from server.zenodo_client import MCPZenodoClient
-from models.request import CitationRequest
 from models.response import CitationResponse
 from .registry import tool
 
