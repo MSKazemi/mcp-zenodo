@@ -27,23 +27,21 @@ With this Zenodo MCP server, you can search, retrieve metadata, and download dat
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/mcp-zenodo.git
+git clone https://github.com/MSKazemi/mcp-zenodo.git
 cd mcp-zenodo/mcp_sdk_core
 ```
 
 ### 2. Install Dependencies
 
-Ensure you have **Python 3.8+** installed. Then install the required packages:
+Ensure you have **Python 3.12 or newer** installed. Then install the required packages:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Alternatively, if you use `uvicorn` manually:
-
-```bash
-pip install uvicorn
-```
+The server uses the tools implemented in [`mcp_api`](../mcp_api/README.md), so keep the whole
+repository checked out. A Zenodo token is optional: set `ZENODO_API_TOKEN` in the `env` block
+below, in `mcp_api/.env` or in a `.env` at the repository root.
 
 ### 3. Add MCP Server Configuration to Cursor IDE (`mcp.json`)
 
@@ -88,26 +86,18 @@ To connect the Zenodo MCP server to Cursor IDE, create a `mcp.json` file that sp
 
 ```
 mcp_sdk_core/
-├── client/           # Core client utilities
-│   ├── client.py
-│   └── ...
-├── server/           # MCP server implementation
-│   ├── server.py
-│   ├── zenodo_client.py
-│   └── models/       # Request/response models
+├── client/           # Example client that exercises the server
+│   └── client.py
+├── server/
+│   └── server.py     # Exposes the mcp_api tools over stdio
 ├── README.md
-└── requirements.txt  # Project dependencies
+└── requirements.txt
 ```
 
-## Extending MCP
+## Adding a Tool
 
-To add more services beyond Zenodo:
-
-1. Create a new MCP server under the `server/` directory.
-2. Define necessary request/response models.
-3. Update the `mcp.json` configuration with the new server details.
-
-Example: Adding an "Arxiv" MCP server or a "Kaggle" MCP server.
+Add it under `mcp_api/server/tools/` with the `@tool` decorator and import it in that
+package's `__init__.py`. Both this server and the HTTP service pick it up.
 
 ## Troubleshooting
 

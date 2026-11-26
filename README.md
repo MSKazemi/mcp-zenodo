@@ -119,9 +119,12 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your Zenodo API token
 
-# Run the API server
-uvicorn server.main:app --host 0.0.0.0 --port 8000
+# Run the API server on http://127.0.0.1:8000
+python -m server.main
 ```
+
+Without an `MCP_API_KEY`, the service answers only requests from the same machine. See
+[Access control](mcp_api/README.md#access-control) before exposing it.
 
 ---
 
