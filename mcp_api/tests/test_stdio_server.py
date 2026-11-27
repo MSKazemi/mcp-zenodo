@@ -8,7 +8,7 @@ from unittest import IsolatedAsyncioTestCase
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from zenodo_stub import start_stub
+from zenodo_stub import TOOL_NAMES, start_stub
 
 SERVER = Path(__file__).resolve().parents[2] / "mcp_sdk_core" / "server" / "server.py"
 ARGUMENTS = {
@@ -38,7 +38,14 @@ class StdioServerTests(IsolatedAsyncioTestCase):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = (await session.list_tools()).tools
-                self.assertEqual(len(tools), 11)
+                self.assertEqual({tool.name for tool in tools}, TOOL_NAMES)
+                undescribed = [
+                    f"{tool.name}.{name}"
+                    for tool in tools
+                    for name, schema in tool.inputSchema["properties"].items()
+                    if not schema.get("description")
+                ]
+                self.assertEqual(undescribed, [])
                 for tool in tools:
                     arguments = ARGUMENTS.get(tool.name, {"record_id": "1"})
                     with self.subTest(tool=tool.name):

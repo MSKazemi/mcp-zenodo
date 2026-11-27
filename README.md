@@ -1,5 +1,8 @@
 # mcp-zenodo — Zenodo MCP Server
 
+[![tests](https://github.com/MSKazemi/mcp-zenodo/actions/workflows/tests.yml/badge.svg)](https://github.com/MSKazemi/mcp-zenodo/actions/workflows/tests.yml)
+[![good first issues](https://img.shields.io/github/issues/MSKazemi/mcp-zenodo/good%20first%20issue)](https://github.com/MSKazemi/mcp-zenodo/labels/good%20first%20issue)
+
 **mcp-zenodo is a Zenodo MCP server: it connects large language models to [Zenodo](https://zenodo.org/), the CERN-hosted open-access research repository, through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/).** It lets an LLM search Zenodo records, read metadata, retrieve citations, and list or download files as callable tools. It is built for developers and researchers who want AI assistants to work with open research datasets, software, and publications. Use it when you want tools like Claude Desktop, Cursor IDE, or a LangChain/LangGraph agent to ground answers in real Zenodo records with DOIs. Do not use it if you need to *deposit* or *publish* to Zenodo, since this project is read/retrieval oriented and does not implement upload workflows. Compared with calling the Zenodo REST API directly, mcp-zenodo packages that access as MCP tools so any MCP-compatible client can use Zenodo without writing custom integration code.
 
 > One-line value prop: **an MCP server for Zenodo that turns open-access research data into LLM-callable tools.**
@@ -126,6 +129,17 @@ python -m server.main
 Without an `MCP_API_KEY`, the service answers only requests from the same machine. See
 [Access control](mcp_api/README.md#access-control) before exposing it.
 
+To run it in a container instead, from the repository root:
+
+```bash
+docker build -t mcp-zenodo .
+export MCP_API_KEY="$(openssl rand -hex 32)"
+docker run -p 127.0.0.1:8000:8000 -e MCP_API_KEY mcp-zenodo
+```
+
+Callers must send that key as a bearer token. Add `-e ZENODO_API_TOKEN` to pass your Zenodo
+token through from the environment.
+
 ---
 
 ## Example
@@ -138,12 +152,21 @@ The assistant calls the `search_records` tool, then `get_metadata`, and returns 
 
 ```json
 {
-  "hits": [
+  "query": "climate model output",
+  "total_results": 1,
+  "returned_results": 1,
+  "records": [
     {
+      "id": 1234567,
       "title": "Example Climate Model Output Dataset",
       "doi": "10.5281/zenodo.1234567",
-      "type": "dataset",
-      "url": "https://zenodo.org/record/1234567"
+      "publication_date": "2026-01-02",
+      "resource_type": "dataset",
+      "creators": ["Doe, Jane"],
+      "keywords": ["climate"],
+      "description": "Monthly model output...",
+      "file_count": 3,
+      "url": "https://zenodo.org/records/1234567"
     }
   ]
 }
@@ -201,7 +224,16 @@ Not at this time — install it by cloning the repository as shown in the quicks
 
 ## Contributing
 
-Contributions to both implementations are welcome. Please see the implementation READMEs ([mcp_sdk_core](mcp_sdk_core/README.md), [mcp_api](mcp_api/README.md)) for details.
+Contributions are welcome. Setting up takes a few commands, and the tests need no Zenodo token:
+
+```bash
+make setup
+make test
+```
+
+- [CONTRIBUTING.md](CONTRIBUTING.md): setup, code layout and how to add a tool
+- [Good first issues](https://github.com/MSKazemi/mcp-zenodo/labels/good%20first%20issue)
+- [CHANGELOG.md](CHANGELOG.md): what changed
 
 Thank you to everyone listed in [CONTRIBUTORS.md](CONTRIBUTORS.md).
 

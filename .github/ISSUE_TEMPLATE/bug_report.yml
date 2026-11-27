@@ -1,0 +1,33 @@
+name: Bug report
+description: Something doesn't work as described
+labels: [bug]
+body:
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The tool call or command, with its arguments. A public record ID helps.
+    validations:
+      required: true
+  - type: dropdown
+    id: server
+    attributes:
+      label: Which server?
+      options:
+        - Stdio server (Cursor, Claude Desktop)
+        - HTTP service
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Error output
+      description: Remove tokens and keys first. For security problems, see SECURITY.md instead.
+      render: text

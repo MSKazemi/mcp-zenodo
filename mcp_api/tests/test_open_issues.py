@@ -8,30 +8,27 @@ import httpx
 
 from server import main
 from server.tools import (
-    compare_tool, download_tool, embed_tool, keywords_tool, metadata_tool,
-    related_records_tool, summarize_tool,
+    compare_tool, data_type_tool, download_tool, embed_tool, keywords_tool, metadata_tool,
+    related_records_tool, search_tool, summarize_tool,
 )
 from server.tools.registry import dispatch_tool_call, get_tool_registry
 from server.zenodo_client import MCPZenodoClient
-from zenodo_stub import record, start_stub
-
-TOOL_NAMES = {
-    "search_records", "get_metadata", "get_citation", "detect_data_type",
-    "compare_records", "list_files", "download_file", "generate_embed_link",
-    "extract_keywords", "get_related_records", "summarize_record",
-}
+from zenodo_stub import TOOL_NAMES, record, start_stub
 
 
 class ToolTests(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.queries = []
-        origin = await start_stub(self.addAsyncCleanup, self.queries)
+        self.rate_limited = []
+        origin = await start_stub(
+            self.addAsyncCleanup, self.queries, self.rate_limited
+        )
         cache = tempfile.TemporaryDirectory()
         self.addCleanup(cache.cleanup)
         self.client = MCPZenodoClient(base_url=f"{origin}/api", cache_dir=cache.name)
         self.client.api_token = None
         self.addAsyncCleanup(self.client._close_session)
-        for module in (compare_tool, download_tool, embed_tool, keywords_tool,
+        for module in (compare_tool, data_type_tool, download_tool, embed_tool, keywords_tool,
                        metadata_tool, related_records_tool, summarize_tool):
             patcher = patch.object(module, "_client", self.client)
             patcher.start()
@@ -77,14 +74,15 @@ class ToolTests(IsolatedAsyncioTestCase):
         self.assertTrue(result.embed_url.endswith("/records/1/preview/data.csv"))
         self.assertEqual(result.record_type, "dataset")
 
-    async def test_related_search_terms_carry_no_query_syntax(self):
+    async def test_related_records_use_one_search_without_stray_syntax(self):
         await dispatch_tool_call("get_related_records", {"record_id": "1", "max_results": 40})
-        sent = [query["q"] for query in self.queries]
-        self.assertIn("Ocean data depth salinity v1.0", sent)
-        self.assertEqual({query["size"] for query in self.queries}, {"25"})
-        self.assertFalse(
-            [q for q in sent if set('()[]{}:/"') & set(q)], "query syntax was sent"
+        self.assertEqual(len(self.queries), 1)
+        sent = self.queries[0]
+        self.assertEqual(
+            sent["q"],
+            '"ocean" OR "salinity" OR "doe jane" OR ocean OR depth OR salinity OR v1.0',
         )
+        self.assertEqual((sent["size"], sent["sort"]), ("25", "bestmatch"))
 
     async def test_metadata_honours_include_flags(self):
         result = await dispatch_tool_call(
@@ -105,13 +103,70 @@ class ToolTests(IsolatedAsyncioTestCase):
         self.assertIn("Checksum mismatch", result.error)
         self.assertEqual(list(self.client.cache_dir.rglob("*.*")), [])
 
-    async def post_process(self, body):
-        with patch.object(main.mcp_server.tool_invoker, "client", self.client):
+    async def test_search_returns_short_records_unless_asked_for_all(self):
+        with patch.object(search_tool, "client", self.client):
+            short = await dispatch_tool_call("search_records", {"query": "ocean"})
+            full = await dispatch_tool_call(
+                "search_records", {"query": "ocean", "full": True}
+            )
+        first = short["records"][0]
+        self.assertEqual(short["returned_results"], 2)
+        self.assertEqual(first["resource_type"], "dataset")
+        self.assertEqual(first["file_count"], 1)
+        self.assertEqual(first["description"], "Ocean salinity data. Salinity data.")
+        self.assertNotIn("files", first)
+        self.assertIn("files", full["records"][0])
+
+    async def test_page_size_is_capped_only_without_a_token(self):
+        await self.client.search_records("ocean", max_results=100)
+        self.client.api_token = "token"
+        await self.client.search_records("ocean", max_results=100)
+        self.assertEqual([q["size"] for q in self.queries], ["25", "100"])
+
+    async def test_data_type_is_the_stated_resource_type(self):
+        for stated, expected in (("software", "software"), ("publication", "article"),
+                                 ("poster", "poster")):
+            payload = record(1)
+            payload["metadata"]["resource_type"] = {"type": stated}
+            with self.subTest(stated=stated), patch.object(
+                self.client, "get_metadata", return_value=payload
+            ):
+                result = await dispatch_tool_call("detect_data_type", {"record_id": "1"})
+            self.assertEqual((result["data_type"], result["confidence"]), (expected, 1.0))
+            self.assertEqual(result["metadata"]["file_types"], ["csv"])
+
+    async def test_bad_arguments_are_a_client_error(self):
+        for arguments in ({}, {"record_id": "1", "bogus": 1}):
+            with self.subTest(arguments=arguments):
+                response = await self.post_call("get_metadata", arguments)
+                self.assertEqual(response.status_code, 400, response.text)
+        self.assertEqual(self.queries, [])
+
+    async def test_rate_limit_is_passed_on(self):
+        self.rate_limited.append(True)
+        with patch.object(search_tool, "client", self.client):
+            for response in (
+                await self.post_call("search_records", {"query": "x"}),
+                await self.post_call("get_metadata", {"record_id": "1"}),
+                await self.post_process({"query": "x"}),
+            ):
+                self.assertEqual(response.status_code, 429, response.text)
+                self.assertEqual(response.headers["Retry-After"], "7")
+
+    async def post_call(self, name, arguments):
+        return await self.post("/mcp/tools/call", {"name": name, "arguments": arguments})
+
+    async def post(self, path, body):
+        with patch.object(main.config, "api_key", None):
             transport = httpx.ASGITransport(app=main.app, client=("127.0.0.1", 5000))
             async with httpx.AsyncClient(
                 transport=transport, base_url="http://127.0.0.1:8000"
             ) as http:
-                return await http.post("/mcp/process", json=body)
+                return await http.post(path, json=body)
+
+    async def post_process(self, body):
+        with patch.object(main.mcp_server.tool_invoker, "client", self.client):
+            return await self.post("/mcp/process", body)
 
     async def test_process_endpoint_returns_records(self):
         with patch.object(main.config, "api_key", None):

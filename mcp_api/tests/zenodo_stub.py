@@ -4,6 +4,13 @@ import hashlib
 
 from aiohttp import web
 
+# Every tool both servers must offer; add new tools here
+TOOL_NAMES = {
+    "search_records", "get_metadata", "get_citation", "detect_data_type",
+    "compare_records", "list_files", "download_file", "generate_embed_link",
+    "extract_keywords", "get_related_records", "summarize_record",
+}
+
 BODY = b"a,b\n1,2\n"
 CHECKSUM = "md5:" + hashlib.md5(BODY).hexdigest()
 
@@ -30,11 +37,18 @@ def record(record_id: int, origin: str = "https://zenodo.org") -> dict:
     }
 
 
-async def start_stub(add_cleanup, queries=None) -> str:
-    """Serve the stand-in on a free local port and return its origin."""
+async def start_stub(add_cleanup, queries=None, rate_limited=None) -> str:
+    """Serve the stand-in on a free local port and return its origin.
+
+    While ``rate_limited`` is a non-empty list, every request is answered 429.
+    """
     origin = ""
 
     async def handle(request):
+        if rate_limited:
+            return web.json_response(
+                {"status": 429}, status=429, headers={"Retry-After": "7"}
+            )
         if request.path == "/content":
             return web.Response(body=BODY)
         if request.path == "/api/records":
