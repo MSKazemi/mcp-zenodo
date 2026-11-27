@@ -6,7 +6,7 @@ Closes #
 
 ## Checklist
 
-- [ ] `make test` passes
+- [ ] `make test` and `make lint` pass
 - [ ] Changed behaviour has a test
 - [ ] Documentation is updated if users will notice the change
 - [ ] No tokens or `.env` files are included

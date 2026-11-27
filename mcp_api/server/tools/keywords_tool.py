@@ -2,7 +2,7 @@
 Tool for extracting keywords from Zenodo records.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from server.zenodo_client import MCPZenodoClient
 from server.text import strip_html
 from .registry import tool

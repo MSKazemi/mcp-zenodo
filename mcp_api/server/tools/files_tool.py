@@ -2,10 +2,8 @@
 Tool for listing files in Zenodo records.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from server.zenodo_client import MCPZenodoClient
-from models.request import ListFilesRequest
-from models.response import ListFilesResponse
 from .registry import tool
 
 # Initialize the client

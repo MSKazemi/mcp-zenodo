@@ -21,10 +21,6 @@ class ResourceHandler:
         Returns:
             Dictionary containing the prepared resources
         """
-        # Extract relevant information from the request
-        query = request.query
-        filters = request.filters or {}
-        
         # Prepare resources based on the request
         resources = {
             "api_access": True,

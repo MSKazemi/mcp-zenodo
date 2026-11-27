@@ -2,8 +2,6 @@
 Main MCP Server implementation for Zenodo.
 """
 
-import time
-from typing import Dict, Any, Optional
 from .prompt import PromptAssembler
 from .resources import ResourceHandler
 from .tools.tools import ToolInvoker

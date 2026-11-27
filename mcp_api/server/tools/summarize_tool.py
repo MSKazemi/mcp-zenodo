@@ -3,8 +3,7 @@ Summarize tool implementation for Zenodo API.
 """
 
 import time
-from typing import Dict, Any, Optional
-from models.request import SummarizeRequest
+from typing import Dict, Any
 from models.response import SummarizeResponse
 from server.zenodo_client import MCPZenodoClient
 from server.text import strip_html
@@ -61,7 +60,7 @@ def _format_summary(summary_dict: Dict[str, Any]) -> str:
     # Add file information if present
     if 'files' in summary_dict:
         files = summary_dict['files']
-        lines.append(f"\nFiles:")
+        lines.append("\nFiles:")
         lines.append(f"- Count: {files['count']}")
         lines.append(f"- Total Size: {files['total_size']} bytes")
         lines.append(f"- File Types: {', '.join(files['file_types'])}")
@@ -69,7 +68,7 @@ def _format_summary(summary_dict: Dict[str, Any]) -> str:
     # Add version information if present
     if 'versions' in summary_dict:
         versions = summary_dict['versions']
-        lines.append(f"\nVersions:")
+        lines.append("\nVersions:")
         lines.append(f"- Count: {versions['count']}")
         lines.append(f"- Latest Version: {'Yes' if versions['is_latest'] else 'No'}")
         if versions['parent_id']:

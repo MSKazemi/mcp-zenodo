@@ -18,6 +18,7 @@
 - `extract_keywords` and `generate_embed_link`.
 - A Dockerfile, a test suite and CI.
 - A contributor guide, issue and pull request templates, a security policy and a Makefile.
+- Ruff linting in CI. Thanks @medomohamed22 (#22).
 - Parameter descriptions for the stdio tools.
 
 ### Fixed

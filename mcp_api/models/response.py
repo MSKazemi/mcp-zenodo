@@ -2,9 +2,8 @@
 Response models for MCP Zenodo integration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import List, Dict, Any, Optional, Union
-from datetime import datetime
 
 class ZenodoFile(BaseModel):
     """Model for Zenodo file metadata."""
